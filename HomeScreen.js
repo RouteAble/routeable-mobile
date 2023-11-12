@@ -18,6 +18,7 @@ function HomeScreen({ route, navigation }) {
     const { userId } = route.params;
     const [location, setLocation] = useState(null);
     const [address, setAddress] = useState(null);
+    const [pins, setPins] = useState([]);
     const [filterModalVisible, setFilterModalVisible] = useState(false);
     const [selectedTags, setSelectedTags] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -30,6 +31,26 @@ function HomeScreen({ route, navigation }) {
         longitudeDelta: 0.1,
     });
     // For demonstration, let's assume you have some sample locations with tags
+
+    async function getPins(){
+        const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
+        const {data, error} = await supabase.from('Image')
+            .select('*')
+
+        if(error){
+            console.log("errror getting pins");
+            return [];
+        }
+        return data;
+    }
+
+    useEffect(() => {
+        getPins().then(pins => {
+            setPins(pins);
+        })
+    })
+
+
     const sampleLocations = [
         {
             id: 1,
