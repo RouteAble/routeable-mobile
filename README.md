@@ -78,7 +78,7 @@ yarn install
 ```
 3. Start the server
 ```sh
-npm expo start
+npx expo start
 ```
 OR
 ```sh
