@@ -127,26 +127,36 @@ function DetailScreen({ route, navigation }) {
         setTags([]); // Handle error by setting default value
         }
     };
-        
-  
-        const fetchImages = async (imageUrls) => {
-        const imagePromises = imageUrls.map(async (imageUrl) => {
-          try {
-            const response = await fetch(imageUrl);
-            if (response.ok) {
-              const blob = await response.blob();
-              const imageURL = URL.createObjectURL(blob);
-              return imageURL;
-            } else {
-              return null;
+
+
+      const fetchImages = async (base64ImageStrings) => {
+
+        const formats = ["image/jpg", "image/jpeg", "image/png"]; // The formats to test
+
+        let imageResults = base64ImageStrings.filter((base64String) => base64String !== null && base64String !== "");
+
+        let blobUrls = imageResults.map((base64String) => {
+          for(let format of formats) {
+            try {
+              const bytes = atob(base64String);
+              let array = new Uint8Array(bytes.length);
+              for(let i = 0; i < bytes.length; i++)
+                array[i] = bytes.charCodeAt(i);
+              let blob = new Blob([array], {type: format});
+              let blobUrl = URL.createObjectURL(blob);
+              const img = new Image();
+              img.src = blobUrl;
+              img.onload = () => blobUrl;
+              img.onerror = () => null;
+
+            } catch(e) {
+              continue;
             }
-          } catch (error) {
-            return null;
           }
         });
-      
-        const imageResults = await Promise.all(imagePromises);
-        setImages(imageResults.filter((imageUrl) => imageUrl !== null));
+
+        blobUrls = blobUrls.filter(url => url !== null); // Filter out unsuccessful attempts
+        setImages(blobUrls);
       };
       fetchTags();
       if (location.images && location.images.length > 0) {

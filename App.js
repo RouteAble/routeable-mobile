@@ -70,8 +70,6 @@ function App() {
                 source={require('./assets/symbol_bold__1080px__black.png')} // Provide the correct path to your image
                 style={{ width: 24, height: 24, tintColor: '#FFC300' }}
               />
-                <Text style={{ color: '#FFC300', fontSize: 18, marginLeft: 5, fontWeight: 'bold' }}>{getBalance()}</Text>
-
               </View>
             ),
           })}

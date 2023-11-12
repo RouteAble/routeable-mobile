@@ -1,31 +1,85 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Clipboard } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons'; // You'll need to install the FontAwesome5 package
+import React, {useEffect, useState} from 'react';
+import {Clipboard, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {FontAwesome5} from '@expo/vector-icons';
+import {createClient} from "@supabase/supabase-js";
+import axios from "axios"; // You'll need to install the FontAwesome5 package
 
 function ErgoWalletScreen({ route }) {
-  const { walletAddress, mnemonic } = route.params;
+  const { walletAddress, userId,  mnemonic } = route.params;
 
-  const copyToClipboardWalletAddress = () => {
-    Clipboard.setString("address");
-        };
+  const [balance, setBalance] = useState("0.00");
 
-const copyToClipboardMnemonic = () => {
-    Clipboard.setString("mnemonic");
-    };
+  const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
 
-// Get text from clipboard
-const getTextFromClipboard = async () => {
-  const text = await Clipboard.getString();
-  // Use the text from the clipboard as needed
+  const getAddress = async () => {
+    const {data, error} = await supabase.from('Blockchain')
+        .select('address')
+        .eq('user_id', userId)
+
+    if(error){
+      console.log("error getting address");
+      return "error";
+    }
+
+    return data[0].address;
+  }
+
+  const copyToClipboardWalletAddress = async () => {
+
+    const address = await getAddress();
+
+    Clipboard.setString(address);
+  };
+
+const copyToClipboardMnemonic = async () => {
+  const {data, error} = await supabase.from('Blockchain')
+      .select('mnemonic')
+      .eq('user_id', userId)
+
+  if (error) {
+    console.log("error getting address");
+    return;
+  }
+
+  const mnemonic = data[0].mnemonic;
+
+  Clipboard.setString(mnemonic);
 };
 
-  const balanceAmount = 123.45; // Replace with the actual balance amount
+  const getBalance = async () => {
+    const address = await getAddress();
+    if (address === "error") {
+      return "0.00";
+    }
+    const api = `${process.env.EXPO_PUBLIC_TESTNET_EXPLORER_BASE_API_URL}/api/v1/addresses/${address}/balance/total`
+    try {
+      const res = await axios.get(api);
+      const nanoErgs = res.data.confirmed.nanoErgs;
+      const ergs = nanoErgs * 10 ** -9;
+      return ergs.toFixed(2);
+    } catch (e) {
+      console.log("error fetching balance");
+      return "0.00";
+    }
+  }
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const balance = await getBalance();
+      console.log(balance);
+      setBalance(balance);
+    };
+
+    fetchBalance();
+  }, [])
+
+// Get text from clipboard
 
   return (
     <View style={styles.container}>
       <Text style={styles.balanceTitle}>Current ERG coin Balance</Text>
       <View style={styles.bigBalanceContainer}>
-        <Text style={styles.bigBalanceAmount}>{balanceAmount} ERG</Text>
+        <Text style={styles.bigBalanceAmount}>{balance} ERG</Text>
       </View>
 
       <View style={styles.buttonContainer}>
