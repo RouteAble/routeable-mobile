@@ -33,8 +33,8 @@ export default function Auth() {
                   console.log(res.data);
               })
               setLoading(false);
+              navigation.navigate('Home', {userId}, navigation)
           });
-      navigation.navigate('Home');
 
     }
   }

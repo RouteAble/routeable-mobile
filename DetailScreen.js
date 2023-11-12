@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, Dimensions } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import React, {useEffect, useState} from 'react';
+import {Dimensions, FlatList, Image, Pressable, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Modal from 'react-native-modal';
-import { Pressable } from 'react-native';
-import { Camera } from 'expo-camera'; // Import Camera from Expo
+import {Camera} from 'expo-camera'; // Import Camera from Expo
 import * as FileSystem from 'expo-file-system';
-
-
+import axios from "axios";
 
 
 function DetailScreen({ route, navigation }) {
-    const { address, location, isCurrentLocation } = route.params;
+    const { address, location, userId, isCurrentLocation } = route.params;
     const [images, setImages] = useState([]);
     const [image, setImage] = useState(null);
+    const [imageB64, setImageB64] = useState(null);
     const [tags, setTags] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSeeMore, setIsSeeMore] = useState(false);
@@ -27,6 +25,9 @@ function DetailScreen({ route, navigation }) {
     };
   
     const handleTagEdit = () => {
+
+
+
       setIsEditingTags(!isEditingTags);
     };
   
@@ -37,7 +38,7 @@ function DetailScreen({ route, navigation }) {
         setSelectedTags([...selectedTags, tag]);
       }
     };
-  
+
     const handleTagSave = () => {
       setTags(selectedTags);
       setIsEditingTags(false);
@@ -67,7 +68,7 @@ function DetailScreen({ route, navigation }) {
           const photo = await camera.takePictureAsync();
           const base64Image = await convertImageToBase64(photo.uri);
           setImage(photo.uri);
-          console.log('Base64 Image:', base64Image);
+          setImageB64(base64Image);
           setCameraVisible(false);
         }
       };
@@ -77,7 +78,7 @@ function DetailScreen({ route, navigation }) {
           const base64 = await FileSystem.readAsStringAsync(imageUri, {
             encoding: FileSystem.EncodingType.Base64,
           });
-          return `data:image/jpeg;base64,${base64}`;
+          return base64;
         } catch (error) {
           console.error('Error converting image to base64:', error);
           return null;
@@ -136,12 +137,42 @@ function DetailScreen({ route, navigation }) {
   
       
   
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
       // Perform the submission logic here, e.g., an API call
       // For demonstration purposes, we'll just set a flag to indicate submission
 
+      const apiURI = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/checkImage`
 
-      setIsSubmitted(true);
+      const checkImageBody = {
+        'base64Image': imageB64
+      }
+
+      try{
+        const res = await axios.post(apiURI, checkImageBody);
+        const shaExists = res.data.message;
+        if(!shaExists){
+          const subApi = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/submission`
+          const body = {
+            "image": imageB64,
+            "long": location.coords.longitude,
+            "lat": location.coords.latitude,
+            "userId": userId
+          }
+          const subRes = await axios.post(subApi, body);
+          const success = subRes.data.message;
+          if(success){
+            setIsSubmitted(true);
+          } else {
+            console.log("too similar")
+            setIsSubmitted(false);
+          }
+        } else {
+          console.log("sha exists")
+          setIsSubmitted(false);
+        }
+      } catch (e){
+        console.log(e.message);
+      }
     };
   
     const imagesToDisplay = isSeeMore ? images : images.slice(0, 3);

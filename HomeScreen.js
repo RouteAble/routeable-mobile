@@ -10,11 +10,12 @@ import { FontAwesome5 } from '@expo/vector-icons';
 
 
 
-function HomeScreen({ navigation }) {
+function HomeScreen({ route, navigation }) {
 //    console.log("a", supabase.auth.user);
 //    const userId = "292b5c66-2166-42bd-a7c4-058c856e2735";
 //    const specificUser = supabase.auth.admin.getUserById(2);
 //    console.log("user", specificUser);
+    const { userId } = route.params;
     const [location, setLocation] = useState(null);
     const [address, setAddress] = useState(null);
     const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -135,7 +136,8 @@ function HomeScreen({ navigation }) {
   
     const handleMarkerPress = (selectedLocation) => {
       selectedLocation = convertLocation(selectedLocation);
-      navigation.navigate('Detail', {location: selectedLocation }, navigation);
+      console.log("userId:", userId);
+      navigation.navigate('Detail', {location: selectedLocation, userId: userId}, navigation);
     };
   
     const handleSearch = async (data, details = null) => {
@@ -282,7 +284,14 @@ function HomeScreen({ navigation }) {
   
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate('Detail', { address, location:convertLocation(location), isCurrentLocation: true }, navigation)}
+          onPress={() => {
+            return navigation.navigate('Detail', {
+              address,
+              location: location,
+              isCurrentLocation: true,
+              userId: userId
+            }, navigation)
+          }}
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
