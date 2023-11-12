@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import React, {useEffect, useState} from 'react';
+import {Button, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import MapView, {Marker} from 'react-native-maps';
 import * as Location from 'expo-location';
 import axios from 'axios';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import Modal from 'react-native-modal';
 import {createClient} from "@supabase/supabase-js";
-import { FontAwesome5 } from '@expo/vector-icons';
-
+import {FontAwesome5} from '@expo/vector-icons';
 
 
 function HomeScreen({ route, navigation }) {
-//    console.log("a", supabase.auth.user);
-//    const userId = "292b5c66-2166-42bd-a7c4-058c856e2735";
-//    const specificUser = supabase.auth.admin.getUserById(2);
-//    console.log("user", specificUser);
     const { userId } = route.params;
     const [location, setLocation] = useState(null);
     const [address, setAddress] = useState(null);
@@ -24,13 +19,8 @@ function HomeScreen({ route, navigation }) {
     const [locations, setLocations] = useState([]);
     const [searchLocation, setSearchLocation] = useState(null);
     const [searchAddress, setSearchAddress] = useState(null);
-    const [mapRegion, setMapRegion] = useState({
-        latitude: 42.3868,
-        longitude: -72.526711,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-    });
     // For demonstration, let's assume you have some sample locations with tags
+
 
     async function getPins(){
         const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
@@ -49,7 +39,6 @@ function HomeScreen({ route, navigation }) {
           .getPublicUrl(`${pin.sha256_hash}.png`)
 
           pin.imageB64 = data.publicUrl;
-          console.log(pin.imageB64);
           pin.id = index;
         });
 
@@ -58,51 +47,38 @@ function HomeScreen({ route, navigation }) {
     }
 
     useEffect(() => {
-        (async () => {
-            try {
+        getPins().then(pins => {
+            setLocations(pins)
+        })
 
-                const data = await getPins();
-                setPins(data);
-                
-
-
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    return;
-                }
-
-                filterLocationsByTags(); // Filter locations based on selected tags
-                const userLocation = await Location.getCurrentPositionAsync({
+        Location.requestForegroundPermissionsAsync().then(({status}) => {
+            if(status){
+                // filterLocationsByTags(); // Filter locations based on selected tags
+                Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Lowest, // Set lower accuracy for less accurate location
+                }).then((userLocation) => {
+                    setLocation(userLocation);
+                    setSearchLocation(userLocation);
+                    const { latitude, longitude } = userLocation.coords;
+
+                    const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY; // Replace with your API key
+
+                    axios.get(
+                        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+                    ).then((res) => {
+                        const { results } = res.data;
+                        if (results.length > 0) {
+                            const formattedAddress = results[0].formatted_address;
+                            setAddress(formattedAddress);
+                            setSearchAddress(formattedAddress);
+                        }
+
+                    })
+
                 });
-                setLocation(userLocation);
-                setSearchLocation(userLocation);
-                setMapRegion({
-                    latitude: userLocation.coords.latitude,
-                    longitude: userLocation.coords.longitude,
-                    latitudeDelta: 0.1,
-                    longitudeDelta: 0.1,
-                });
-
-                const { latitude, longitude } = userLocation.coords;
-                const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY; // Replace with your API key
-
-                // Make an API call to obtain address information based on the coordinates
-                const response = await axios.get(
-                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-                );
-
-                const { results } = response.data;
-                if (results.length > 0) {
-                    const formattedAddress = results[0].formatted_address;
-                    setAddress(formattedAddress);
-                    setSearchAddress(formattedAddress);
-                }
-            } catch (error) {
-                console.error('Error fetching location:', error);
             }
-        })();
-    }, []);
+        })
+    }, [])
 
     const toggleTag = (tag) => {
         if (selectedTags.includes(tag)) {
@@ -114,7 +90,7 @@ function HomeScreen({ route, navigation }) {
 
     const clearAllTags = () => {
         setSelectedTags([]); // Clear all selected tags
-        setLocations([]); // Clear the filtered locations
+        // setLocations([]); // Clear the filtered locations
         setFilterModalVisible(false); // Close the filter modal
         setSearchAddress(address); // Clear the address
         setSearchLocation(location); // Clear the location
@@ -124,18 +100,22 @@ function HomeScreen({ route, navigation }) {
     const filterLocationsByTags = () => {
         // Filter locations based on selected tags
         console.log(selectedTags)
-        const filteredLocations = pins.filter((location) =>
-            selectedTags.length > 0 ? selectedTags.every((tag) => location[tag]) : true
-        );
-        console.log("actually ran")
+        const filteredLocations = [];
         setFilterModalVisible(false); // Close the filter modal
 
-        setLocations(filteredLocations);
+        // setLocations(filteredLocations);
     };
 
     const convertLocation = (location) => {
-        converted = {latitude: location.latitude, longitude: location.longitude, id: location.id, imageB64: location.imageB64, ramps: location.ramps, stairs: location.stairs, guard_rails: location.guard_rails};
-        return converted;
+        return {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            id: location.id,
+            imageB64: location.imageB64,
+            ramps: location.ramps,
+            stairs: location.stairs,
+            guard_rails: location.guard_rails
+        };
     }
 
     const handleMarkerPress = async (selectedLocation) => {
@@ -162,8 +142,7 @@ function HomeScreen({ route, navigation }) {
 
             const { results } = response.data;
             if (results.length > 0) {
-                const formattedAddress = results[0].formatted_address;
-                return formattedAddress;
+                return results[0].formatted_address;
             } else {
                 console.error('Address not found for the coordinates:', latitude, longitude);
                 return null;
@@ -209,6 +188,14 @@ function HomeScreen({ route, navigation }) {
         longitudeDelta: 0.015,
     };
 
+    // const locations = [
+    //     {
+    //         id: 0,
+    //         longitude: -72.52526,
+    //         latitude: 42.39094,
+    //     }
+    // ]
+
     return (
         <View style={styles.container}>
             {location && searchLocation && (
@@ -218,22 +205,22 @@ function HomeScreen({ route, navigation }) {
                 >
                     <Marker
                         coordinate={{
-                            latitude: searchLocation.coords.latitude,
-                            longitude: searchLocation.coords.longitude,
+                            latitude: searchLocation.coords.latitude ? searchLocation.coords.latitude : 0,
+                            longitude: searchLocation.coords.longitude ? searchLocation.coords.longitude : 0,
                         }}
                         title={searchLocation === location ? "Your Location" : "Search Location"}
                         onPress={() => handleMarkerPress({latitude: searchLocation.coords.latitude, longitude: searchLocation.coords.longitude, id: -1, imageB64: null, ramps: false, stairs: false, guard_rails: false})}
                     />
 
-                    {locations.map((filteredLocation) => (
+                    {locations.filter(item => item.latitude && item.longitude).map((item) => (
                         <Marker
-                            key={filteredLocation.id}
+                            key={item.id}
                             coordinate={{
-                                latitude: filteredLocation.latitude,
-                                longitude: filteredLocation.longitude,
+                                latitude: item.latitude,
+                                longitude: item.longitude,
                             }}
                             title="Filtered Location"
-                            onPress={() => handleMarkerPress(filteredLocation)}
+                            onPress={() => handleMarkerPress(item)}
                         />
                     ))}
                 </MapView>
@@ -299,12 +286,15 @@ function HomeScreen({ route, navigation }) {
                 </View>
             </Modal>
 
-            <TouchableOpacity
+            {location && (<TouchableOpacity
                 style={styles.addButton}
                 onPress={() => {
+                    console.log(location)
+                    console.log(location.coords)
+                    console.log(location.coords.longitude)
                     return navigation.navigate('Detail', {
                         address,
-                        location_object: {latitude: location.latitude, longitude: location.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false},
+                        location_object: {latitude: location.coords.latitude, longitude: location.coords.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false},
                         userId: userId,
                         isCurrentLocation: true,
                     }, navigation)
@@ -313,7 +303,7 @@ function HomeScreen({ route, navigation }) {
                 <Text style={styles.addButtonText}>
                     <FontAwesome5 name="plus" size={24} color="white" />
                 </Text>
-            </TouchableOpacity>
+            </TouchableOpacity>)}
 
             <TouchableOpacity
                 style={styles.ergoWalletButton}
@@ -321,6 +311,7 @@ function HomeScreen({ route, navigation }) {
                     navigation.navigate('ErgoWallet', {
                         walletAddress: 'Your Wallet Address',
                         mnemonic: 'Your Mnemonic',
+                        userId: userId
                     })
                 }
             >

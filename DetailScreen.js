@@ -11,6 +11,7 @@ import {createClient} from "@supabase/supabase-js";
 
 function DetailScreen({ route, navigation }) {
     const { address, location_object, userId, isCurrentLocation } = route.params;
+    console.log(location_object)
     const [images, setImages] = useState([]);
     const [image, setImage] = useState(null);
     const [imageB64, setImageB64] = useState(null);
@@ -129,28 +130,7 @@ function DetailScreen({ route, navigation }) {
             };
 
         const fetchImages = async (imageUrls) => {
-            console.log('Fetching images...');
-            const imagePromises = imageUrls.map(async (imageUrl) => {
-              try {
-                const response = await fetch(imageUrl);
-                if (response.ok) {
-                  const blob = await response.blob();
-                  const imageURL = URL.createObjectURL(blob);
-                  console.log('Fetched image URL:', imageURL);
-                  return imageURL;
-                } else {
-                  console.error('Image fetch failed:', response.status);
-                  return null;
-                }
-              } catch (error) {
-                console.error('Error fetching image:', error);
-                return null;
-              }
-            });
-            const imageResults = await Promise.all(imagePromises);
-            console.log('Image results:', imageResults);
-            setImages(imageResults.filter((imageUrl) => imageUrl !== null));
-            console.log('Images:', images);
+          setImages(imageUrls)
       };
     
       fetchTags();
@@ -173,6 +153,9 @@ function DetailScreen({ route, navigation }) {
       try{
         const res = await axios.post(apiURI, checkImageBody);
         const shaExists = res.data.message;
+
+        console.log("location_object:", location_object)
+
         if(!shaExists){
           const subApi = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/submission`
           const body = {

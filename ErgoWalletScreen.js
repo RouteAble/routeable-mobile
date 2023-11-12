@@ -18,6 +18,7 @@ function ErgoWalletScreen({ route }) {
 
     if(error){
       console.log("error getting address");
+      console.log(error);
       return "error";
     }
 
