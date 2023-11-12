@@ -85,7 +85,7 @@ OR
 yarn expo start
 ```
 3. Choose the platform of choice. React Native documents to set up your own emulator space can be found at [https://reactnative.dev/docs/environment-setup](https://reactnative.dev/docs/environment-setup).
-4. 
+
 ### Prerequisites
 
 This is an example of how to list things you need to use the software and how to install them.
