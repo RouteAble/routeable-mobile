@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View, Image } from 'react-native';
 import { supabase } from './lib/supabase'
 import { Button, Input } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
@@ -13,7 +13,6 @@ export default function Auth() {
   const navigation = useNavigation(); // Initialize useNavigation
 
   async function signInWithEmail() {
-    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -21,7 +20,6 @@ export default function Auth() {
     await supabase.auth.getSession();
     if (error) {
       Alert.alert(error.message);
-      setLoading(false);
     } else {
       // Redirect to the "Home" screen on successful sign-in
       const apiURL = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/init`;
@@ -40,7 +38,6 @@ export default function Auth() {
   }
 
   async function signUpWithEmail() {
-    setLoading(true);
     const {
       data: { session },
       error,
@@ -51,11 +48,15 @@ export default function Auth() {
 
     if (error) Alert.alert(error.message);
     if (!session) Alert.alert('Please check your inbox for email verification!');
-    setLoading(false);
   }
 
   return (
     <View style={styles.container}>
+    <Image
+        source={require('./assets/white-logo-removebg-preview.png')} // Provide the correct path to your image
+        style={styles.logo}
+    />
+
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Input
           label="Email"
@@ -89,8 +90,9 @@ export default function Auth() {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 40,
+    marginTop: 0,
     padding: 12,
+    alignItems: 'center',
   },
   verticallySpaced: {
     paddingTop: 4,
@@ -99,5 +101,11 @@ const styles = StyleSheet.create({
   },
   mt20: {
     marginTop: 20,
+  },
+  logo: {
+    marginTop: 0,
+    width: 200, // Adjust the width as needed
+    height: 200, // Adjust the height as needed
+    marginBottom: 0, // Add margin at the bottom to space it from other elements
   },
 });

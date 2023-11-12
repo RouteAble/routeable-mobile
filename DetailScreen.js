@@ -13,6 +13,7 @@ function DetailScreen({ route, navigation }) {
     const [imageB64, setImageB64] = useState(null);
     const [tags, setTags] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [wasSuccessful, setWasSuccessful] = useState(null);
     const [isSeeMore, setIsSeeMore] = useState(false);
     const [isEditingTags, setIsEditingTags] = useState(false);
     const [selectedTags, setSelectedTags] = useState([]);
@@ -43,23 +44,6 @@ function DetailScreen({ route, navigation }) {
       setTags(selectedTags);
       setIsEditingTags(false);
     };
-  
-    // const pickImage = async () => {
-    //   try {
-    //     let result = await ImagePicker.launchImageLibraryAsync({
-    //       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    //       allowsEditing: true,
-    //       aspect: [4, 3],
-    //       quality: 1,
-    //     });
-  
-    //     if (!result.cancelled) {
-    //       setImage(result.uri);
-    //     }
-    //   } catch (error) {
-    //     console.error('Error picking image:', error);
-    //   }
-    // };
 
 
     
@@ -103,33 +87,26 @@ function DetailScreen({ route, navigation }) {
     };
         
   
-      const fetchImages = async (imageUrls) => {
-        console.log('Fetching images...');
+        const fetchImages = async (imageUrls) => {
         const imagePromises = imageUrls.map(async (imageUrl) => {
           try {
             const response = await fetch(imageUrl);
             if (response.ok) {
               const blob = await response.blob();
               const imageURL = URL.createObjectURL(blob);
-              console.log('Fetched image URL:', imageURL);
               return imageURL;
             } else {
-              console.error('Image fetch failed:', response.status);
               return null;
             }
           } catch (error) {
-            console.error('Error fetching image:', error);
             return null;
           }
         });
       
         const imageResults = await Promise.all(imagePromises);
-        console.log('Image results:', imageResults);
         setImages(imageResults.filter((imageUrl) => imageUrl !== null));
-        console.log('Images:', images);
       };
       fetchTags();
-      console.log('Location:', location);
       if (location.images && location.images.length > 0) {
         fetchImages(location.images);
       }
@@ -162,13 +139,16 @@ function DetailScreen({ route, navigation }) {
           const success = subRes.data.message;
           if(success){
             setIsSubmitted(true);
+            setWasSuccessful(true);
           } else {
             console.log("too similar")
-            setIsSubmitted(false);
+            setIsSubmitted(true);
+            setWasSuccessful(false);
           }
         } else {
           console.log("sha exists")
-          setIsSubmitted(false);
+          setIsSubmitted(true);
+          setWasSuccessful(false);
         }
       } catch (e){
         console.log(e.message);
@@ -249,9 +229,11 @@ function DetailScreen({ route, navigation }) {
   </View>
   
   
-        <TouchableOpacity style={styles.editTagsButton} onPress={handleTagEdit}>
+        {isCurrentLocation &&
+        (<TouchableOpacity style={styles.editTagsButton} onPress={handleTagEdit}>
           <Text style={styles.editTagsButtonText}>Edit Tags</Text>
         </TouchableOpacity>
+        )}
   
         {imagesToDisplay.length > 0 ? (
           <View style={[styles.imageContainer, imagesToDisplay.length > 3 && !isSeeMore && { flex:1, alignItems: 'center' }]}>
@@ -283,7 +265,7 @@ function DetailScreen({ route, navigation }) {
           </View>
         )  : (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={styles.emptyText}>There are no images or tags for this location currently. Please add your own images or tags. {"\n"}{"\n"}Note that tags are automatically saved, but you will need to submit your image.</Text>
+            <Text style={styles.emptyText}>There are no images or tags for this location currently. {"\n"}{"\n"}</Text>
           </View>
         )}
 
@@ -303,9 +285,12 @@ function DetailScreen({ route, navigation }) {
             <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
         )}
-        {isSubmitted && image && (
+        {isSubmitted && image && wasSuccessful ? (
           <Text style={styles.confirmationText}>Request submitted successfully!</Text>
-        )}
+        ): null}
+        {isSubmitted && image && !wasSuccessful ? (
+          <Text style={styles.rejectText}>Similar image already exists</Text>
+        ): null}
         <Modal
         isVisible={cameraVisible}
         style={styles.cameraModal}
@@ -395,6 +380,12 @@ function DetailScreen({ route, navigation }) {
       fontSize: 16,
       color: '#2ecc71',
       textAlign: 'center',
+    },
+    rejectText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#e74c3c',
+        textAlign: 'center',
     },
     imageContainer: {
       marginVertical: 10,

@@ -67,11 +67,12 @@ function HomeScreen({ route, navigation }) {
         try {
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
-            console.log('Permission to access location was denied');
             return;
           }
   
-          const userLocation = await Location.getCurrentPositionAsync({});
+          const userLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Lowest, // Set lower accuracy for less accurate location
+          });
           setLocation(userLocation);
           setSearchLocation(userLocation);
           setMapRegion({
@@ -80,7 +81,6 @@ function HomeScreen({ route, navigation }) {
             latitudeDelta: 0.1,
             longitudeDelta: 0.1,
           });
-          console.log('User location:', userLocation);
   
           const { latitude, longitude } = userLocation.coords;
           const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY; // Replace with your API key
@@ -95,7 +95,6 @@ function HomeScreen({ route, navigation }) {
             const formattedAddress = results[0].formatted_address;
             setAddress(formattedAddress);
             setSearchAddress(formattedAddress);
-            console.log('Address:', formattedAddress);
           }
         } catch (error) {
           console.error('Error fetching location:', error);
@@ -115,7 +114,6 @@ function HomeScreen({ route, navigation }) {
       setSelectedTags([]); // Clear all selected tags
       setLocations([]); // Clear the filtered locations
       setFilterModalVisible(false); // Close the filter modal
-      console.log(searchAddress, searchLocation);
       setSearchAddress(address); // Clear the address
       setSearchLocation(location); // Clear the location
     };
@@ -131,18 +129,50 @@ function HomeScreen({ route, navigation }) {
     };
   
     const convertLocation = (location) => {
-      return {coords: {latitude: location.latitude, longitude: location.longitude}, id: location.id, images: location.images, tags: location.tags};
+        console.log("location is", location);
+        converted = {coords: {latitude: location.latitude, longitude: location.longitude}, id: location.id, images: location.images, tags: location.tags};
+        console.log(converted);
+        return converted;
     }
   
-    const handleMarkerPress = (selectedLocation) => {
-      selectedLocation = convertLocation(selectedLocation);
-      console.log("userId:", userId);
-      navigation.navigate('Detail', {location: selectedLocation, userId: userId}, navigation);
-    };
+    const handleMarkerPress = async (selectedLocation) => {
+        selectedLocation = convertLocation(selectedLocation);
+        if (selectedLocation && selectedLocation.coords.latitude && selectedLocation.coords.longitude) {
+          const address = await convertCoordinatesToAddress(
+            selectedLocation.coords.latitude,
+            selectedLocation.coords.longitude
+          );
+          if (address) {
+            navigation.navigate('Detail', { location: selectedLocation, address:address, userId: userId }, navigation);
+          }
+        }
+      };
   
+    const convertCoordinatesToAddress = async (latitude, longitude) => {
+        try {
+          const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY; // Replace with your API key
+    
+          // Make an API call to obtain address information based on the coordinates
+          const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+          );
+    
+          const { results } = response.data;
+          if (results.length > 0) {
+            const formattedAddress = results[0].formatted_address;
+            return formattedAddress;
+          } else {
+            console.error('Address not found for the coordinates:', latitude, longitude);
+            return null;
+          }
+        } catch (error) {
+          console.error('Error fetching address:', error);
+          return null;
+        }
+      };
+
     const handleSearch = async (data, details = null) => {
       const { description } = data;
-      console.log('Selected location:', description);
       if (details && details.geometry && details.geometry.location) {
         const { location } = details.geometry;
         setSearchAddress(description);
@@ -189,6 +219,7 @@ function HomeScreen({ route, navigation }) {
                 longitude: searchLocation.coords.longitude,
               }}
               title={searchLocation === location ? "Your Location" : "Search Location"}
+              onPress={() => handleMarkerPress({latitude: searchLocation.coords.latitude, longitude: searchLocation.coords.longitude, id: 0, images: [], tags: []})}
             />
   
             {locations.map((filteredLocation) => (
@@ -210,8 +241,9 @@ function HomeScreen({ route, navigation }) {
           style={styles.filterButton}
           onPress={() => setFilterModalVisible(true)}
         >
-          <Text style={styles.filterButtonText}>Filter</Text>
+          <FontAwesome5 name="filter" size={20} color="white" />
         </TouchableOpacity>
+
   
         <GooglePlacesAutocomplete
           placeholder="Search for a location"
@@ -237,7 +269,7 @@ function HomeScreen({ route, navigation }) {
               ]}
               onPress={() => toggleTag('Stairs')}
             >
-              <Text>Stairs</Text>
+              <Text style={styles.filterTagText}>Stairs</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -246,7 +278,7 @@ function HomeScreen({ route, navigation }) {
               ]}
               onPress={() => toggleTag('Ramps')}
             >
-              <Text>Ramps</Text>
+              <Text style={styles.filterTagText}>Ramps</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -255,7 +287,7 @@ function HomeScreen({ route, navigation }) {
               ]}
               onPress={() => toggleTag('Guard Rails')}
             >
-              <Text>Guard Rails</Text>
+              <Text style={styles.filterTagText}>Guard Rails</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -264,7 +296,7 @@ function HomeScreen({ route, navigation }) {
               ]}
               onPress={() => toggleTag('Asphalt')}
             >
-              <Text>Asphalt</Text>
+              <Text style={styles.filterTagText}>Asphalt</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -273,7 +305,7 @@ function HomeScreen({ route, navigation }) {
               ]}
               onPress={() => toggleTag('Concrete')}
             >
-              <Text>Concrete</Text>
+              <Text style={styles.filterTagText}>Concrete</Text>
             </TouchableOpacity>
             <Button title="Apply Filters" onPress={() => filterLocationsByTags()} />
             <Button title="Clear All" onPress={() => clearAllTags()} />
@@ -341,7 +373,7 @@ const styles = StyleSheet.create({
     top: 55,
     right: 10,
     backgroundColor: '#3498db',
-    borderRadius: 10,
+    borderRadius: 50,
     padding: 10,
   },
   filterButtonText: {
@@ -349,7 +381,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   filterModal: {
-    margin: 20,
+    margin: 30,
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#F2DED9',
@@ -401,6 +433,9 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  filterTagText: {
+    textAlign: 'center',
   },
 
 });
