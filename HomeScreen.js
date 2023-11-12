@@ -241,7 +241,7 @@ function HomeScreen({ route, navigation }) {
           style={styles.filterButton}
           onPress={() => setFilterModalVisible(true)}
         >
-          <FontAwesome5 name="filter" size={20} color="white" />
+          <FontAwesome5 name="filter" size={24} color="white" />
         </TouchableOpacity>
 
   
@@ -325,7 +325,9 @@ function HomeScreen({ route, navigation }) {
             }, navigation)
           }}
         >
-          <Text style={styles.addButtonText}>+</Text>
+        <Text style={styles.addButtonText}>
+          <FontAwesome5 name="plus" size={24} color="white" />
+        </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     position: 'absolute',
-    top: 55,
+    top: 60,
     right: 10,
     backgroundColor: '#3498db',
     borderRadius: 50,

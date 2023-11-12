@@ -384,7 +384,7 @@ function DetailScreen({ route, navigation }) {
     },  
     imageButton: {
       marginTop: 10,
-      backgroundColor: '#3498db',
+      backgroundColor: '#2196F3',
       borderRadius: 10,
       padding: 10,
       alignItems: 'center',
@@ -470,7 +470,7 @@ function DetailScreen({ route, navigation }) {
       marginTop: 10,
       backgroundColor: '#2196F3',
       padding: 10,
-      borderRadius: 5,
+      borderRadius: 10,
     },
     editTagsButtonText: {
       color: 'white',
