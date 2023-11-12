@@ -4,6 +4,9 @@ import Modal from 'react-native-modal';
 import {Camera} from 'expo-camera'; // Import Camera from Expo
 import * as FileSystem from 'expo-file-system';
 import axios from "axios";
+import { sha256 } from 'js-sha256';
+import { Buffer } from 'buffer';
+import {createClient} from "@supabase/supabase-js";
 
 
 function DetailScreen({ route, navigation }) {
@@ -25,9 +28,35 @@ function DetailScreen({ route, navigation }) {
       setIsSeeMore(!isSeeMore);
     };
   
-    const handleTagEdit = () => {
+    const handleTagEdit = async () => {
 
+      const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
 
+      const buf = Buffer.from(imageB64, 'base64');
+
+      const hash = sha256.create();
+      hash.update(buf);
+
+      //
+      const {data, error} = await supabase.from('Image')
+          .select('stairs, ramps, guard_rails')
+          .eq('sha256_hash', hash.hex())
+
+      if(error){
+        console.log("error");
+        return;
+      }
+
+      const labels = data[0];
+      /*
+      {
+        "guard_rails": boolean,
+        "ramps": boolean,
+        "stairs": boolean
+      }
+       */
+
+      // console.log(labels.guard_rails);
 
       setIsEditingTags(!isEditingTags);
     };
