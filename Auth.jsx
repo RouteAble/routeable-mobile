@@ -3,7 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { supabase } from './lib/supabase'
 import { Button, Input } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
-
+import axios from 'axios';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -18,13 +18,24 @@ export default function Auth() {
       email: email,
       password: password,
     });
-
+    await supabase.auth.getSession();
     if (error) {
       Alert.alert(error.message);
       setLoading(false);
     } else {
       // Redirect to the "Home" screen on successful sign-in
+      const apiURL = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/init`;
+          supabase.auth.getUser().then((res) => {
+              const userId = res.data.user.id;
+              axios.post(apiURL, {
+                      userId: userId
+              }).then((res) => {
+                  console.log(res.data);
+              })
+              setLoading(false);
+          });
       navigation.navigate('Home');
+
     }
   }
 

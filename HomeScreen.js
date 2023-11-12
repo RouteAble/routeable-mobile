@@ -11,10 +11,10 @@ import { FontAwesome5 } from '@expo/vector-icons';
 
 
 function HomeScreen({ navigation }) {
-    console.log("a", supabase.auth.user);
-    const userId = "292b5c66-2166-42bd-a7c4-058c856e2735";
-    const specificUser = supabase.auth.admin.getUserById(2);
-    console.log("user", specificUser);
+//    console.log("a", supabase.auth.user);
+//    const userId = "292b5c66-2166-42bd-a7c4-058c856e2735";
+//    const specificUser = supabase.auth.admin.getUserById(2);
+//    console.log("user", specificUser);
     const [location, setLocation] = useState(null);
     const [address, setAddress] = useState(null);
     const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -82,7 +82,7 @@ function HomeScreen({ navigation }) {
           console.log('User location:', userLocation);
   
           const { latitude, longitude } = userLocation.coords;
-          const apiKey = 'AIzaSyB2xph5AG2QGOXDUyYKuLl7sQufDTqaFuc'; // Replace with your API key
+          const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY; // Replace with your API key
   
           // Make an API call to obtain address information based on the coordinates
           const response = await axios.get(
@@ -150,7 +150,7 @@ function HomeScreen({ navigation }) {
         console.log('Location data not available in details, trying to fetch it separately...');
         
         // Fetch location data separately using the place_id
-        const apiKey = 'AIzaSyB2xph5AG2QGOXDUyYKuLl7sQufDTqaFuc';
+        const apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY
         const placeId = data.place_id;
         const response = await axios.get(
           `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${apiKey}`
@@ -215,7 +215,7 @@ function HomeScreen({ navigation }) {
           placeholder="Search for a location"
           onPress={handleSearch}
           query={{
-            key: 'AIzaSyB2xph5AG2QGOXDUyYKuLl7sQufDTqaFuc',
+            key: process.env.EXPO_PUBLIC_GOOGLE_API_KEY,
             language: 'en',
           }}
         />

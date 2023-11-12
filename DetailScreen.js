@@ -139,6 +139,8 @@ function DetailScreen({ route, navigation }) {
     const handleSubmit = () => {
       // Perform the submission logic here, e.g., an API call
       // For demonstration purposes, we'll just set a flag to indicate submission
+
+
       setIsSubmitted(true);
     };
   
