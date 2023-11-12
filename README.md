@@ -67,7 +67,25 @@ We were inspired by fellow UMass Amherst students who identified the lack of acc
 
 Instructions on setting up our project locally.
 To get a local copy up and running follow these simple example steps.
-
+1. Clone the repo.
+2. Install dependencies
+```sh
+npm install
+```
+OR 
+```sh
+yarn install
+```
+3. Start the server
+```sh
+npm expo start
+```
+or
+```sh
+yarn expo start
+```
+3. Choose the platform of choice. React Native documents to set up your own emulator space can be found at [https://reactnative.dev/docs/environment-setup](https://reactnative.dev/docs/environment-setup).
+4. 
 ### Prerequisites
 
 This is an example of how to list things you need to use the software and how to install them.
