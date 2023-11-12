@@ -28,43 +28,8 @@ function DetailScreen({ route, navigation }) {
       setIsSeeMore(!isSeeMore);
     };
   
-    const handleTagEdit = async () => {
-
-      const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
-
-      const buf = Buffer.from(imageB64, 'base64');
-
-      const hash = sha256.create();
-      hash.update(buf);
-
-      //
-      const {data, error} = await supabase.from('Image')
-          .select('stairs, ramps, guard_rails')
-          .eq('sha256_hash', hash.hex())
-
-      if(error){
-        console.log("error");
-        return;
-      }
-
-      const labels = data[0];
-      /*
-      {
-        "guard_rails": boolean,
-        "ramps": boolean,
-        "stairs": boolean
-      }
-       */
-
-
-      const preselectedTags = availableTags.filter(
-        (tag) => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
-      );
-    
-      setSelectedTags(preselectedTags);
-      setTags(selectedTags);
-
-      setIsEditingTags(!isEditingTags);
+    const handleTagEdit = () => {
+        setIsEditingTags(!isEditingTags);
     };
   
     const handleTagSelection = (tag) => {
@@ -120,34 +85,77 @@ function DetailScreen({ route, navigation }) {
     useEffect(() => {
       // Simulate fetching tags from a database or any other source
       // Replace this with actual logic to fetch tags for the location
-      const fetchTags = async () => {
-        const { status } = await Camera.requestCameraPermissionsAsync();
-    };
-
-
-      const fetchImages = async (base64Image) => {
-
-        const formats = ["image/jpg", "image/jpeg", "image/png"]; // The formats to test
-
-        // try {
-        //     const bytes = atob(base64Image);
-        //     let array = new Uint8Array(bytes.length);
-        //     for(let i = 0; i < bytes.length; i++)
-        //     array[i] = bytes.charCodeAt(i);
-        //     let blob = new Blob([array], {type: format});
-        //     let blobUrl = URL.createObjectURL(blob);
-        //     const img = new Image();
-        //     img.src = blobUrl;
-        //     img.onload = () => blobUrl;
-        //     img.onerror = () => null;
-
-        // } catch(e) {
-        //     console.log(e.message);
-        // }
-        setImages([location_object.imageB64]);
+      const fetchInitialTags = async () => {
+        if (!location_object.imageB64) {
+          // Handle the case where no image exists for this location
+          // You can log a message or set a default value for tags, or perform any other desired action.
+          console.log('No image exists for this location.');
+          return;
+        }
+        // The rest of your code to work with the image goes here
+        const supabase = createClient(
+          process.env.EXPO_PUBLIC_SUPABASE_ADDRESS,
+          process.env.EXPO_PUBLIC_SUPABASE_API_KEY
+        );
+      
+        const buf = Buffer.from(imageB64, 'base64');
+      
+        const hash = sha256.create();
+        hash.update(buf);
+      
+        const { data, error } = await supabase
+          .from('Image')
+          .select('stairs, ramps, guard_rails')
+          .eq('sha256_hash', hash.hex());
+      
+        if (error) {
+          console.log('Error fetching initial tags:', error);
+          return;
+        }
+      
+        const labels = data[0];
+        console.log(labels);
+      
+        const preselectedTags = availableTags.filter(
+          (tag) => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
+        );
+      
+        setSelectedTags(preselectedTags);
+        setTags(preselectedTags);
       };
+      
+        const fetchTags = async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            };
+
+        const fetchImages = async (imageUrls) => {
+            console.log('Fetching images...');
+            const imagePromises = imageUrls.map(async (imageUrl) => {
+              try {
+                const response = await fetch(imageUrl);
+                if (response.ok) {
+                  const blob = await response.blob();
+                  const imageURL = URL.createObjectURL(blob);
+                  console.log('Fetched image URL:', imageURL);
+                  return imageURL;
+                } else {
+                  console.error('Image fetch failed:', response.status);
+                  return null;
+                }
+              } catch (error) {
+                console.error('Error fetching image:', error);
+                return null;
+              }
+            });
+            const imageResults = await Promise.all(imagePromises);
+            console.log('Image results:', imageResults);
+            setImages(imageResults.filter((imageUrl) => imageUrl !== null));
+            console.log('Images:', images);
+      };
+    
       fetchTags();
-      fetchImages(location_object.imageB64);
+      fetchImages([location_object.imageB64]);
+      //fetchInitialTags();
     }, [location_object.imageB64]);
   
       

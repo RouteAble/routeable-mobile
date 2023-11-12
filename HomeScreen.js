@@ -43,7 +43,13 @@ function HomeScreen({ route, navigation }) {
         }
 
         data.forEach((pin, index) => {
-          pin.imageB64 = `data:image/jpeg;base64,${pin.imageB64}`;
+          const { data } = supabase
+          .storage
+          .from('image')
+          .getPublicUrl(`${pin.sha256_hash}.png`)
+
+          pin.imageB64 = data.publicUrl;
+          console.log(pin.imageB64);
           pin.id = index;
         });
 
@@ -216,7 +222,7 @@ function HomeScreen({ route, navigation }) {
                             longitude: searchLocation.coords.longitude,
                         }}
                         title={searchLocation === location ? "Your Location" : "Search Location"}
-                        onPress={() => handleMarkerPress({latitude: searchLocation.latitude, longitude: searchLocation.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false})}
+                        onPress={() => handleMarkerPress({latitude: searchLocation.coords.latitude, longitude: searchLocation.coords.longitude, id: -1, imageB64: null, ramps: false, stairs: false, guard_rails: false})}
                     />
 
                     {locations.map((filteredLocation) => (
