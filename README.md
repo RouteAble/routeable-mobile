@@ -80,7 +80,7 @@ yarn install
 ```sh
 npm expo start
 ```
-or
+OR
 ```sh
 yarn expo start
 ```
