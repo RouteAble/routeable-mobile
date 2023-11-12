@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import axios from 'axios';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import Modal from 'react-native-modal';
-import { supabase } from './lib/supabase';
+import {createClient} from "@supabase/supabase-js";
 import { FontAwesome5 } from '@expo/vector-icons';
 
 
@@ -38,54 +38,28 @@ function HomeScreen({ route, navigation }) {
             .select('*')
 
         if(error){
-            console.log("errror getting pins");
+            console.log("error getting pins");
             return [];
         }
+
+        data.forEach((pin, index) => {
+          pin.imageB64 = `data:image/jpeg;base64,${pin.imageB64}`;
+          pin.id = index;
+        });
+
+
         return data;
     }
 
     useEffect(() => {
-        getPins().then(pins => {
-            setPins(pins);
-        })
-    })
-
-
-    const sampleLocations = [
-        {
-            id: 1,
-            latitude: 42.3732,
-            longitude: -72.496819,
-            tags: ['Stairs', 'Asphalt'],
-            images: [
-                'https://dummyimage.com/300x300/ff0000/ffffff', // Red image
-                'https://dummyimage.com/300x300/00ff00/ffffff', // Green image
-                'https://dummyimage.com/300x300/0000ff/ffffff', // Blue image
-            ],
-        },
-        {
-            id: 2,
-            latitude: 42.39,
-            longitude: -72.5,
-            tags: ['Ramps', 'Concrete'],
-            images: [
-                'https://x.dpstatic.com/d/avatars/m/94/94375.jpg?1366434490',   // Red image
-                'https://dummyimage.com/300x300/00ff00/ffffff',   // Green image
-                'https://dummyimage.com/300x300/0000ff/ffffff',   // Blue image
-                'https://dummyimage.com/300x300/ffA500/ffffff',   // Orange image
-                'https://dummyimage.com/300x300/ffff00/000000',   // Yellow image
-                'https://dummyimage.com/300x300/800080/ffffff',   // Purple image
-                'https://dummyimage.com/300x300/000000/ffffff',   // Black image
-                'https://dummyimage.com/300x300/ffc0cb/ffffff',   // Pink image
-                'https://dummyimage.com/300x300/ffd700/000000',   // Gold image
-                'https://dummyimage.com/300x300/a52a2a/ffffff',
-            ],
-        },
-    ];
-
-    useEffect(() => {
         (async () => {
             try {
+
+                const data = await getPins();
+                setPins(data);
+                
+
+
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
                     return;
@@ -127,7 +101,6 @@ function HomeScreen({ route, navigation }) {
     const toggleTag = (tag) => {
         if (selectedTags.includes(tag)) {
             setSelectedTags(selectedTags.filter((selectedTag) => selectedTag !== tag));
-            setAllImagesDisplayed(false);
         } else {
             setSelectedTags([...selectedTags, tag]);
         }
@@ -144,30 +117,30 @@ function HomeScreen({ route, navigation }) {
 
     const filterLocationsByTags = () => {
         // Filter locations based on selected tags
-        const filteredLocations = sampleLocations.filter((location) =>
-            selectedTags.length > 0 ? selectedTags.every((tag) => location.tags.includes(tag)) : true
+        console.log(selectedTags)
+        const filteredLocations = pins.filter((location) =>
+            selectedTags.length > 0 ? selectedTags.every((tag) => location[tag]) : true
         );
+        console.log("actually ran")
+        setFilterModalVisible(false); // Close the filter modal
 
         setLocations(filteredLocations);
-        setFilterModalVisible(false); // Close the filter modal
     };
 
     const convertLocation = (location) => {
-        console.log("location is", location);
-        converted = {coords: {latitude: location.latitude, longitude: location.longitude}, id: location.id, images: location.images, tags: location.tags};
-        console.log(converted);
+        converted = {latitude: location.latitude, longitude: location.longitude, id: location.id, imageB64: location.imageB64, ramps: location.ramps, stairs: location.stairs, guard_rails: location.guard_rails};
         return converted;
     }
 
     const handleMarkerPress = async (selectedLocation) => {
         selectedLocation = convertLocation(selectedLocation);
-        if (selectedLocation && selectedLocation.coords.latitude && selectedLocation.coords.longitude) {
+        if (selectedLocation && selectedLocation.latitude && selectedLocation.longitude) {
             const address = await convertCoordinatesToAddress(
-                selectedLocation.coords.latitude,
-                selectedLocation.coords.longitude
+                selectedLocation.latitude,
+                selectedLocation.longitude
             );
             if (address) {
-                navigation.navigate('Detail', { location: selectedLocation, address:address, userId: userId }, navigation);
+                navigation.navigate('Detail', { location_object: selectedLocation, address:address, userId: userId }, navigation);
             }
         }
     };
@@ -243,7 +216,7 @@ function HomeScreen({ route, navigation }) {
                             longitude: searchLocation.coords.longitude,
                         }}
                         title={searchLocation === location ? "Your Location" : "Search Location"}
-                        onPress={() => handleMarkerPress({latitude: searchLocation.coords.latitude, longitude: searchLocation.coords.longitude, id: 0, images: [], tags: []})}
+                        onPress={() => handleMarkerPress({latitude: searchLocation.latitude, longitude: searchLocation.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false})}
                     />
 
                     {locations.map((filteredLocation) => (
@@ -313,51 +286,6 @@ function HomeScreen({ route, navigation }) {
                     >
                         <Text style={styles.filterTagText}>Guard Rails</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterTag,
-                            selectedTags.includes('Asphalt') && styles.selectedTag,
-                        ]}
-                        onPress={() => toggleTag('Asphalt')}
-                    >
-                        <Text style={styles.filterTagText}>Asphalt</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterTag,
-                            selectedTags.includes('Concrete') && styles.selectedTag,
-                        ]}
-                        onPress={() => toggleTag('Concrete')}
-                    >
-                        <Text style={styles.filterTagText}>Concrete</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterTag,
-                            selectedTags.includes('Rough') && styles.selectedTag,
-                        ]}
-                        onPress={() => toggleTag('Rough')}
-                    >
-                        <Text style={styles.filterTagText}>Rough</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterTag,
-                            selectedTags.includes('Smooth') && styles.selectedTag,
-                        ]}
-                        onPress={() => toggleTag('Smooth')}
-                    >
-                        <Text style={styles.filterTagText}>Smooth</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterTag,
-                            selectedTags.includes('Gravel') && styles.selectedTag,
-                        ]}
-                        onPress={() => toggleTag('Gravel')}
-                    >
-                        <Text style={styles.filterTagText}>Concrete</Text>
-                    </TouchableOpacity>
                     <Button title="Apply Filters" onPress={() => filterLocationsByTags()} />
                     <Button title="Clear All" onPress={() => (clearAllTags())} />
 
@@ -370,9 +298,9 @@ function HomeScreen({ route, navigation }) {
                 onPress={() => {
                     return navigation.navigate('Detail', {
                         address,
-                        location: location,
+                        location_object: {latitude: location.latitude, longitude: location.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false},
+                        userId: userId,
                         isCurrentLocation: true,
-                        userId: userId
                     }, navigation)
                 }}
             >

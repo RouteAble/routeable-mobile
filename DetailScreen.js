@@ -10,7 +10,7 @@ import {createClient} from "@supabase/supabase-js";
 
 
 function DetailScreen({ route, navigation }) {
-    const { address, location, userId, isCurrentLocation } = route.params;
+    const { address, location_object, userId, isCurrentLocation } = route.params;
     const [images, setImages] = useState([]);
     const [image, setImage] = useState(null);
     const [imageB64, setImageB64] = useState(null);
@@ -20,7 +20,7 @@ function DetailScreen({ route, navigation }) {
     const [isSeeMore, setIsSeeMore] = useState(false);
     const [isEditingTags, setIsEditingTags] = useState(false);
     const [selectedTags, setSelectedTags] = useState([]);
-    const availableTags = ["Stairs", "Ramps", "Guard Rails", "Asphalt", "Concrete", "Rough", "Smooth", "Gravel"];
+    const availableTags = ["Stairs", "Ramps", "Guard Rails"];
     const [cameraVisible, setCameraVisible] = useState(false);
     const [camera, setCamera] = useState(null);
   
@@ -30,30 +30,24 @@ function DetailScreen({ route, navigation }) {
   
     const handleTagEdit = async () => {
 
-    //   const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
+      const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
 
-    //   const buf = Buffer.from(imageB64, 'base64');
+      const buf = Buffer.from(imageB64, 'base64');
 
-    //   const hash = sha256.create();
-    //   hash.update(buf);
+      const hash = sha256.create();
+      hash.update(buf);
 
-    //   //
-    //   const {data, error} = await supabase.from('Image')
-    //       .select('stairs, ramps, guard_rails')
-    //       .eq('sha256_hash', hash.hex())
+      //
+      const {data, error} = await supabase.from('Image')
+          .select('stairs, ramps, guard_rails')
+          .eq('sha256_hash', hash.hex())
 
-    //   if(error){
-    //     console.log("error");
-    //     return;
-    //   }
+      if(error){
+        console.log("error");
+        return;
+      }
 
-      const labels = {
-        "guard_rails": true,
-        "ramps": true,
-        "stairs": false
-      };
-      
-      //data[0];
+      const labels = data[0];
       /*
       {
         "guard_rails": boolean,
@@ -62,7 +56,6 @@ function DetailScreen({ route, navigation }) {
       }
        */
 
-      // console.log(labels.guard_rails);
 
       const preselectedTags = availableTags.filter(
         (tag) => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
@@ -82,9 +75,21 @@ function DetailScreen({ route, navigation }) {
       }
     };
 
-    const handleTagSave = () => {
+    const handleTagSave = async () => {
       setTags(selectedTags);
       setIsEditingTags(false);
+      const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
+
+      const buf = Buffer.from(imageB64, 'base64');
+
+      const hash = sha256.create();
+      hash.update(buf);
+
+      const {data, error} = await supabase.from('Image')
+          .update({'stairs':selectedTags.includes("Stairs"),
+            'ramps':selectedTags.includes("Ramps"),
+            'guard_rails':selectedTags.includes("Guard Rails")})
+          .eq('sha256_hash', hash.hex())
     };
 
 
@@ -117,52 +122,33 @@ function DetailScreen({ route, navigation }) {
       // Replace this with actual logic to fetch tags for the location
       const fetchTags = async () => {
         const { status } = await Camera.requestCameraPermissionsAsync();
-        try {
-        // Sample tags for demonstration, you should replace this with actual data retrieval logic
-        const sampleTags = location.tags ? location.tags : [];
-        setSelectedTags(sampleTags);
-        setTags(sampleTags);
-        } catch (error) {
-        console.error('Error fetching tags:', error);
-        setTags([]); // Handle error by setting default value
-        }
     };
 
 
-      const fetchImages = async (base64ImageStrings) => {
+      const fetchImages = async (base64Image) => {
 
         const formats = ["image/jpg", "image/jpeg", "image/png"]; // The formats to test
 
-        let imageResults = base64ImageStrings.filter((base64String) => base64String !== null && base64String !== "");
+        // try {
+        //     const bytes = atob(base64Image);
+        //     let array = new Uint8Array(bytes.length);
+        //     for(let i = 0; i < bytes.length; i++)
+        //     array[i] = bytes.charCodeAt(i);
+        //     let blob = new Blob([array], {type: format});
+        //     let blobUrl = URL.createObjectURL(blob);
+        //     const img = new Image();
+        //     img.src = blobUrl;
+        //     img.onload = () => blobUrl;
+        //     img.onerror = () => null;
 
-        let blobUrls = imageResults.map((base64String) => {
-          for(let format of formats) {
-            try {
-              const bytes = atob(base64String);
-              let array = new Uint8Array(bytes.length);
-              for(let i = 0; i < bytes.length; i++)
-                array[i] = bytes.charCodeAt(i);
-              let blob = new Blob([array], {type: format});
-              let blobUrl = URL.createObjectURL(blob);
-              const img = new Image();
-              img.src = blobUrl;
-              img.onload = () => blobUrl;
-              img.onerror = () => null;
-
-            } catch(e) {
-              continue;
-            }
-          }
-        });
-
-        blobUrls = blobUrls.filter(url => url !== null); // Filter out unsuccessful attempts
-        setImages(blobUrls);
+        // } catch(e) {
+        //     console.log(e.message);
+        // }
+        setImages([location_object.imageB64]);
       };
       fetchTags();
-      if (location.images && location.images.length > 0) {
-        fetchImages(location.images);
-      }
-    }, [location.images]);
+      fetchImages(location_object.imageB64);
+    }, [location_object.imageB64]);
   
       
   
@@ -183,8 +169,8 @@ function DetailScreen({ route, navigation }) {
           const subApi = `${process.env.EXPO_PUBLIC_BACKEND_BASE_URI}/maps/submission`
           const body = {
             "image": imageB64,
-            "long": location.coords.longitude,
-            "lat": location.coords.latitude,
+            "long": location_object.longitude,
+            "lat": location_object.latitude,
             "userId": userId
           }
           const subRes = await axios.post(subApi, body);
@@ -216,7 +202,7 @@ function DetailScreen({ route, navigation }) {
           <Text style={styles.detailText}>Address: {address}</Text>
         ) : (
           <Text style={styles.detailText}>
-            Address: ({location.coords.latitude}, {location.coords.longitude})
+            Address: ({location_object.latitude}, {location_object.longitude})
           </Text>
         )}
         <View style={styles.tagsContainer}>
