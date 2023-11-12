@@ -1,16 +1,10 @@
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="[https://github.com/RouteAble](https://github.com/RouteAble)">
-    <img src="/profile/images/logo.png" alt="Logo" width="600">
-  </a>
 
-<h3 align="center">RouteAble</h3>
+<h3 align="center">RouteAble Frontend</h3>
 
   <p align="center">
 RouteAble is a map-based application that uses crowd-sourced data to help disabled people determine accessible areas. Our technology uses ML for image similarities and tag generation, blockchain to incentivize users, and React Native for hosting on Android and iOS devices. We hope to promote a more inclusive space by helping users upload, share, and idenitfy areas with stairs, ramps, asphalt roads, concrete roads, and guard rails. 
     <br/>
-    <a href="https://github.com/RouteAble"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/RouteAble/routeable-mobile/README.md"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://docs.google.com/presentation/d/145E9zU8xtpnWF9hRp2KIpmkV4GY5TStbv_fuzdng2to/edit?usp=sharing">View Demo</a>
@@ -58,10 +52,7 @@ We were inspired by fellow UMass Amherst students who identified the lack of acc
 
 ### Built With
 
-* [TensorFlow](https://www.tensorflow.org/)
 * [React Native](https://reactnative.dev/)
-* [PyTorch](https://pytorch.org/l)
-* [ErgoBlockchain](https://ergoplatform.org/en/)
 * [Nest.js](https://nestjs.com/)
 * [FastAPI](https://fastapi.tiangolo.com/)
 * [Google Map API](https://developers.google.com/maps)
