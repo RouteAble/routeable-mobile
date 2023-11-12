@@ -6,6 +6,8 @@ import axios from 'axios';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import Modal from 'react-native-modal';
 import { supabase } from './lib/supabase';
+import { FontAwesome5 } from '@expo/vector-icons';
+
 
 
 function HomeScreen({ navigation }) {
@@ -284,6 +286,19 @@ function HomeScreen({ navigation }) {
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+            style={styles.ergoWalletButton}
+            onPress={() =>
+                navigation.navigate('ErgoWallet', {
+                walletAddress: 'Your Wallet Address',
+                mnemonic: 'Your Mnemonic',
+                })
+            }
+        >
+            <FontAwesome5 name="wallet" size={24} color="white" />
+        </TouchableOpacity>
+
   
       </View>
   
@@ -366,6 +381,17 @@ const styles = StyleSheet.create({
   },
   selectedTag: {
     backgroundColor: 'lightblue',
+  },
+  ergoWalletButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    backgroundColor: '#3498db', // Button background color
+    borderRadius: 50, // Make it circular
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
 });

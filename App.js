@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './HomeScreen';
 import DetailScreen from './DetailScreen';
 import ImageZoomScreen from './ImageZoomScreen';
+import ErgoWalletScreen from './ErgoWalletScreen';
 import Auth from './Auth';
 import 'react-native-url-polyfill/auto';
 import { supabase } from './lib/supabase';
@@ -26,11 +27,27 @@ function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={session && session.user ?  (console.log("aaa"), 'Home') : (console.log("auth"), 'Auth')} >
+      <Stack.Navigator>
         <Stack.Screen name="Auth" component={Auth} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={({ navigation }) => ({
+            headerLeft: () => {
+              if (!session) {
+                return null; // Hide the back button leading to Auth for logged-out users
+              }
+              return (
+                <View style={{ marginLeft: 10 }}>
+                  {/* You can customize the headerLeft icon or component here */}
+                </View>
+              );
+            },
+          })}
+        />
         <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="ImageZoom" component={ImageZoomScreen} />
+        <Stack.Screen name="ErgoWallet" component={ErgoWalletScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
