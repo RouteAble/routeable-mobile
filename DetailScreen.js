@@ -20,7 +20,7 @@ function DetailScreen({ route, navigation }) {
     const [isSeeMore, setIsSeeMore] = useState(false);
     const [isEditingTags, setIsEditingTags] = useState(false);
     const [selectedTags, setSelectedTags] = useState([]);
-    const availableTags = ["Stairs", "Ramps", "Guard Rails", "Asphalt", "Concrete"];
+    const availableTags = ["Stairs", "Ramps", "Guard Rails", "Asphalt", "Concrete", "Rough", "Smooth", "Gravel"];
     const [cameraVisible, setCameraVisible] = useState(false);
     const [camera, setCamera] = useState(null);
   
@@ -30,24 +30,30 @@ function DetailScreen({ route, navigation }) {
   
     const handleTagEdit = async () => {
 
-      const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
+    //   const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_ADDRESS, process.env.EXPO_PUBLIC_SUPABASE_API_KEY);
 
-      const buf = Buffer.from(imageB64, 'base64');
+    //   const buf = Buffer.from(imageB64, 'base64');
 
-      const hash = sha256.create();
-      hash.update(buf);
+    //   const hash = sha256.create();
+    //   hash.update(buf);
 
-      //
-      const {data, error} = await supabase.from('Image')
-          .select('stairs, ramps, guard_rails')
-          .eq('sha256_hash', hash.hex())
+    //   //
+    //   const {data, error} = await supabase.from('Image')
+    //       .select('stairs, ramps, guard_rails')
+    //       .eq('sha256_hash', hash.hex())
 
-      if(error){
-        console.log("error");
-        return;
-      }
+    //   if(error){
+    //     console.log("error");
+    //     return;
+    //   }
 
-      const labels = data[0];
+      const labels = {
+        "guard_rails": true,
+        "ramps": true,
+        "stairs": false
+      };
+      
+      //data[0];
       /*
       {
         "guard_rails": boolean,
@@ -57,6 +63,13 @@ function DetailScreen({ route, navigation }) {
        */
 
       // console.log(labels.guard_rails);
+
+      const preselectedTags = availableTags.filter(
+        (tag) => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
+      );
+    
+      setSelectedTags(preselectedTags);
+      setTags(selectedTags);
 
       setIsEditingTags(!isEditingTags);
     };
@@ -197,7 +210,7 @@ function DetailScreen({ route, navigation }) {
           </Text>
         )}
         <View style={styles.tagsContainer}>
-    {tags.length > 0 && !isEditingTags ? (
+    {(tags.length > 0 && !isEditingTags) ? (
       tags.map((tag, index) => (
         <TouchableOpacity
           key={index}

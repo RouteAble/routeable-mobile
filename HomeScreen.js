@@ -69,7 +69,8 @@ function HomeScreen({ route, navigation }) {
           if (status !== 'granted') {
             return;
           }
-  
+          
+          filterLocationsByTags(); // Filter locations based on selected tags
           const userLocation = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Lowest, // Set lower accuracy for less accurate location
           });
@@ -105,6 +106,7 @@ function HomeScreen({ route, navigation }) {
     const toggleTag = (tag) => {
       if (selectedTags.includes(tag)) {
         setSelectedTags(selectedTags.filter((selectedTag) => selectedTag !== tag));
+        setAllImagesDisplayed(false);
       } else {
         setSelectedTags([...selectedTags, tag]);
       }
@@ -116,12 +118,13 @@ function HomeScreen({ route, navigation }) {
       setFilterModalVisible(false); // Close the filter modal
       setSearchAddress(address); // Clear the address
       setSearchLocation(location); // Clear the location
+      filterLocationsByTags(); // Filter locations based on selected tags
     };
   
     const filterLocationsByTags = () => {
       // Filter locations based on selected tags
       const filteredLocations = sampleLocations.filter((location) =>
-        selectedTags.every((tag) => location.tags.includes(tag))
+        selectedTags.length > 0 ? selectedTags.every((tag) => location.tags.includes(tag)) : true
       );
   
       setLocations(filteredLocations);
@@ -307,8 +310,35 @@ function HomeScreen({ route, navigation }) {
             >
               <Text style={styles.filterTagText}>Concrete</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterTag,
+                selectedTags.includes('Rough') && styles.selectedTag,
+              ]}
+              onPress={() => toggleTag('Rough')}
+            >
+              <Text style={styles.filterTagText}>Rough</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterTag,
+                selectedTags.includes('Smooth') && styles.selectedTag,
+              ]}
+              onPress={() => toggleTag('Smooth')}
+            >
+              <Text style={styles.filterTagText}>Smooth</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterTag,
+                selectedTags.includes('Gravel') && styles.selectedTag,
+              ]}
+              onPress={() => toggleTag('Gravel')}
+            >
+              <Text style={styles.filterTagText}>Concrete</Text>
+            </TouchableOpacity>
             <Button title="Apply Filters" onPress={() => filterLocationsByTags()} />
-            <Button title="Clear All" onPress={() => clearAllTags()} />
+            <Button title="Clear All" onPress={() => (clearAllTags())} />
   
             <Button title="Close" onPress={() => setFilterModalVisible(false)} />
           </View>
