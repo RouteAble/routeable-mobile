@@ -7,10 +7,12 @@ import axios from "axios";
 import { sha256 } from 'js-sha256';
 import { Buffer } from 'buffer';
 import {createClient} from "@supabase/supabase-js";
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 function DetailScreen({ route, navigation }) {
-    const { address, location_object, userId, isCurrentLocation } = route.params;
+    const { address, location_object, userId, isCurrentLocation, getPins } = route.params;
     const [images, setImages] = useState([]);
     const [image, setImage] = useState(null);
     const [imageB64, setImageB64] = useState(null);
@@ -80,6 +82,7 @@ function DetailScreen({ route, navigation }) {
           return null;
         }
       };
+
       
       useEffect(() => {
         const fetchInitialTags = async () => {
@@ -120,15 +123,23 @@ function DetailScreen({ route, navigation }) {
             console.log("retrieved supabase", data);
             if (error) throw new Error(`Error fetching initial tags: ${error.message}`);
       
-            const labels = data[0];
-            console.log("labels", labels);
+            if (data && data.length > 0) {
+              const labels = data[0];
+              console.log("labels", labels);
       
-            const preselectedTags = availableTags.filter(
-              tag => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
-            );
-            console.log("preselected", preselectedTags);
-            setSelectedTags(preselectedTags);
-            setTags(preselectedTags);
+              // This is the key part that needs fixing:
+              const preselectedTags = availableTags.filter(tag => {
+                const fieldName = tag.toLowerCase().replace(/\s/g, '_');
+                return labels[fieldName];
+              });
+      
+              console.log("preselected", preselectedTags);
+              setSelectedTags(preselectedTags);
+              setTags(preselectedTags);
+            } else {
+              console.log('No matching data found for the given hash.');
+              // Optionally handle the case where no matching data is found
+            }
           } catch (error) {
             console.error(error);
           }
@@ -146,6 +157,7 @@ function DetailScreen({ route, navigation }) {
         fetchImages([location_object.imageB64]);
         fetchInitialTags();
       }, [location_object.imageB64]);
+      
       
   
       
@@ -179,6 +191,7 @@ function DetailScreen({ route, navigation }) {
           if(success){
             setIsSubmitted(true);
             setWasSuccessful(true);
+            getPins()
           } else {
             console.log("too similar")
             setIsSubmitted(true);

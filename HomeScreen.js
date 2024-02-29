@@ -7,6 +7,8 @@ import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete'
 import Modal from 'react-native-modal';
 import {createClient} from "@supabase/supabase-js";
 import {FontAwesome5} from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 function HomeScreen({ route, navigation }) {
@@ -19,6 +21,8 @@ function HomeScreen({ route, navigation }) {
     const [locations, setLocations] = useState([]);
     const [searchLocation, setSearchLocation] = useState(null);
     const [searchAddress, setSearchAddress] = useState(null);
+    const [refreshPins, setRefreshPins] = useState(false);
+
     // For demonstration, let's assume you have some sample locations with tags
 
 
@@ -46,14 +50,22 @@ function HomeScreen({ route, navigation }) {
         return data;
     }
 
+    useFocusEffect(
+        React.useCallback(() => {
+            // This will be called when the screen is focused
+            setRefreshPins(prev => !prev); // Toggle refreshPins to trigger re-fetch
+        }, [])
+    );
+    
     useEffect(() => {
         getPins().then(pins => {
-            setLocations(pins)
-        })
+            setLocations(pins);
+            setPins(pins); // Assuming you want to reset the original pins as well
+        });
 
         Location.requestForegroundPermissionsAsync().then(({status}) => {
             if(status){
-                // filterLocationsByTags(); // Filter locations based on selected tags
+                filterLocationsByTags(); // Filter locations based on selected tags
                 Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Lowest, // Set lower accuracy for less accurate location
                 }).then((userLocation) => {
@@ -78,7 +90,9 @@ function HomeScreen({ route, navigation }) {
                 });
             }
         })
-    }, [])
+    }, [refreshPins]);
+
+    
 
     const toggleTag = (tag) => {
         if (selectedTags.includes(tag)) {
@@ -103,7 +117,7 @@ function HomeScreen({ route, navigation }) {
         const filteredLocations = [];
         setFilterModalVisible(false); // Close the filter modal
 
-        // setLocations(filteredLocations);
+        setLocations(filteredLocations);
     };
 
     const convertLocation = (location) => {
@@ -297,6 +311,7 @@ function HomeScreen({ route, navigation }) {
                         location_object: {latitude: location.coords.latitude, longitude: location.coords.longitude, id: -1, imageB64: "", ramps: false, stairs: false, guard_rails: false},
                         userId: userId,
                         isCurrentLocation: true,
+                        getPins: getPins,
                     }, navigation)
                 }}
             >
