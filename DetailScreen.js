@@ -11,7 +11,6 @@ import {createClient} from "@supabase/supabase-js";
 
 function DetailScreen({ route, navigation }) {
     const { address, location_object, userId, isCurrentLocation } = route.params;
-    console.log(location_object)
     const [images, setImages] = useState([]);
     const [image, setImage] = useState(null);
     const [imageB64, setImageB64] = useState(null);
@@ -82,61 +81,72 @@ function DetailScreen({ route, navigation }) {
         }
       };
       
-  
-    useEffect(() => {
-      // Simulate fetching tags from a database or any other source
-      // Replace this with actual logic to fetch tags for the location
-      const fetchInitialTags = async () => {
-        if (!location_object.imageB64) {
-          // Handle the case where no image exists for this location
-          // You can log a message or set a default value for tags, or perform any other desired action.
-          console.log('No image exists for this location.');
-          return;
-        }
-        // The rest of your code to work with the image goes here
-        const supabase = createClient(
-          process.env.EXPO_PUBLIC_SUPABASE_ADDRESS,
-          process.env.EXPO_PUBLIC_SUPABASE_API_KEY
-        );
+      useEffect(() => {
+        const fetchInitialTags = async () => {
+          try {
+            console.log("fetching initial tags", location_object);
+            if (!location_object.imageB64) {
+              console.log('No image exists for this location.');
+              return;
+            }
       
-        const buf = Buffer.from(imageB64, 'base64');
+            console.log("before supabase");
+            const supabase = createClient(
+              process.env.EXPO_PUBLIC_SUPABASE_ADDRESS,
+              process.env.EXPO_PUBLIC_SUPABASE_API_KEY
+            );
+            console.log("after supabase");
+            console.log("imageB64", location_object.imageB64);
       
-        const hash = sha256.create();
-        hash.update(buf);
+            // Fetch the image and create a buffer
+            const response = await fetch(location_object.imageB64);
+            const arrayBuffer = await response.arrayBuffer();
+            const buf = Buffer.from(arrayBuffer);
       
-        const { data, error } = await supabase
-          .from('Image')
-          .select('stairs, ramps, guard_rails')
-          .eq('sha256_hash', hash.hex());
+            // Create a SHA-256 hash from the buffer
+            console.log("buf");
+            const hash = sha256.create();
+            hash.update(buf);
+            const hash1 = hash.hex();
+            console.log("hash1", hash1);
       
-        if (error) {
-          console.log('Error fetching initial tags:', error);
-          return;
-        }
+            // Query supabase with the hash
+            console.log("awaiting supabase");
+            const { data, error } = await supabase
+              .from('Image')
+              .select('stairs, ramps, guard_rails')
+              .eq('sha256_hash', hash1);
       
-        const labels = data[0];
-        console.log(labels);
+            console.log("retrieved supabase", data);
+            if (error) throw new Error(`Error fetching initial tags: ${error.message}`);
       
-        const preselectedTags = availableTags.filter(
-          (tag) => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
-        );
+            const labels = data[0];
+            console.log("labels", labels);
       
-        setSelectedTags(preselectedTags);
-        setTags(preselectedTags);
-      };
+            const preselectedTags = availableTags.filter(
+              tag => labels[`${tag.toLowerCase().replace(/\s/g, '_')}`] === true
+            );
+            console.log("preselected", preselectedTags);
+            setSelectedTags(preselectedTags);
+            setTags(preselectedTags);
+          } catch (error) {
+            console.error(error);
+          }
+        };
       
         const fetchTags = async () => {
-            const { status } = await Camera.requestCameraPermissionsAsync();
-            };
-
+          const { status } = await Camera.requestCameraPermissionsAsync();
+        };
+      
         const fetchImages = async (imageUrls) => {
-          setImages(imageUrls)
-      };
-    
-      fetchTags();
-      fetchImages([location_object.imageB64]);
-      //fetchInitialTags();
-    }, [location_object.imageB64]);
+          setImages(imageUrls);
+        };
+      
+        fetchTags();
+        fetchImages([location_object.imageB64]);
+        fetchInitialTags();
+      }, [location_object.imageB64]);
+      
   
       
   
@@ -212,9 +222,11 @@ function DetailScreen({ route, navigation }) {
         </TouchableOpacity>
       ))
     ) : (
+      console.log(isEditingTags, tags.length, selectedTags.length > 0) &&
       !isEditingTags && selectedTags.length > 0 && (
         <View>
-          {/* Render nothing when there are no tags */}
+          {
+          /* Render nothing when there are no tags */}
         </View>
       )
     )}
