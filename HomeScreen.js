@@ -182,8 +182,8 @@ function HomeScreen({ route, navigation }) {
     };
 
     const customRegion = {
-        latitude: 42.3915, // Set the latitude for UMass Amherst
-        longitude: -72.5281, // Set the longitude for UMass Amherst
+        latitude: 41.882350, // Set the latitude for UMass Amherst
+        longitude: -87.637670, // Set the longitude for UMass Amherst
         latitudeDelta: 0.015, // Adjust these values based on your desired view
         longitudeDelta: 0.015,
     };
